@@ -758,6 +758,8 @@ textarea { resize: vertical; min-height: 80px; }
     font-size: 0.9rem;
   }
   #tag-filter-dropdown {
+    left: 0;
+    right: auto;
     min-width: 240px;
     max-width: calc(100vw - 1rem);
     max-height: 65vh;
