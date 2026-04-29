@@ -830,6 +830,11 @@ function wireUpEventListeners() {
   document.querySelectorAll<HTMLElement>('.modal-backdrop').forEach((bd) => {
     bd.addEventListener('click', (e) => {
       if (e.target === bd) {
+        // Never close the form modal on backdrop click — the user may be
+        // clicking to refocus the browser tab after switching away to copy
+        // text, and accidentally landing on the overlay would silently
+        // discard their unsaved recipe.  The form has explicit ✕ / Cancel.
+        if (bd.id === 'form-modal') return;
         if (bd.id === 'view-modal') closeViewModal();
         else closeModal(bd.id);
       }

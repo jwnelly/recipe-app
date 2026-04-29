@@ -28,8 +28,22 @@ export async function getCurrentUser(): Promise<User | null> {
   return session?.user ?? null;
 }
 
-/** Subscribe to auth changes. Returns an unsubscribe fn. */
+/** Subscribe to auth changes. Returns an unsubscribe fn.
+ *
+ * We only react to events that represent a real session change:
+ *   INITIAL_SESSION  – page first loads
+ *   SIGNED_IN        – user just authenticated
+ *   SIGNED_OUT       – user signed out (or session expired/revoked)
+ *
+ * TOKEN_REFRESHED fires silently in the background (e.g. when you switch
+ * back to this tab) and does NOT represent a new sign-in — ignoring it
+ * prevents an unnecessary UI re-render every time you change tabs.
+ */
 export function onAuthChange(cb: (session: Session | null) => void): () => void {
-  const { data } = supabase.auth.onAuthStateChange((_event, session) => cb(session));
+  const { data } = supabase.auth.onAuthStateChange((event, session) => {
+    if (event === 'INITIAL_SESSION' || event === 'SIGNED_IN' || event === 'SIGNED_OUT') {
+      cb(session);
+    }
+  });
   return () => data.subscription.unsubscribe();
 }
