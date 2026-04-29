@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Recipe Box</title>
+  <link rel="stylesheet" href="/src/styles.css" />
+</head>
+<body>
+
+<!-- ── Auth screen (shown when no session) ── -->
+<div id="auth-screen">
+  <div class="auth-card">
+    <h1>📦 Recipe Box</h1>
+    <div class="auth-subtitle">Sign in to your recipe collection</div>
+
+    <div class="auth-tabs">
+      <button class="auth-tab-btn active" data-auth-tab="signin">Sign in</button>
+      <button class="auth-tab-btn" data-auth-tab="signup">Sign up</button>
+    </div>
+
+    <form class="auth-form" id="auth-form">
+      <div>
+        <label for="auth-email">Email</label>
+        <input id="auth-email" type="email" required autocomplete="email" />
+      </div>
+      <div>
+        <label for="auth-password">Password</label>
+        <input id="auth-password" type="password" required autocomplete="current-password" minlength="6" />
+      </div>
+      <div class="auth-error" id="auth-error"></div>
+      <div class="auth-success" id="auth-success"></div>
+      <button class="btn btn-primary" type="submit" id="auth-submit-btn">Sign in</button>
+    </form>
+  </div>
+</div>
+
+<!-- ── App shell (shown when signed in) ── -->
+<div id="app-shell">
+<header>
+  <h1><span>📦</span> Recipe Box</h1>
+  <div class="header-controls">
+    <input id="search" type="text" placeholder="Search recipes…" autocomplete="off" />
+    <div id="tag-filter-wrapper">
+      <button id="tag-filter-btn">
+        Tags <span class="tf-count" id="tf-count" style="display:none;"></span> ▾
+      </button>
+      <div id="tag-filter-dropdown">
+        <div class="tf-hint">✓ include &nbsp;·&nbsp; ✕ exclude &nbsp;·&nbsp; Click active button to clear. Filters apply when you close.</div>
+        <div id="tf-pill-list"></div>
+        <button class="tf-clear" id="tf-clear-btn">Clear all filters</button>
+      </div>
+    </div>
+    <button class="btn btn-ghost" id="btn-import">Import</button>
+    <button class="btn btn-ghost" id="btn-export">Export</button>
+    <button class="btn btn-ghost" id="grocery-btn">
+      🛒 Grocery List <span id="grocery-badge" style="display:none; background:#fff; color:var(--primary); border-radius:10px; padding:0 6px; font-size:0.75rem; margin-left:2px; font-weight:700;"></span>
+    </button>
+    <span class="user-badge" id="user-badge"></span>
+    <button class="btn btn-ghost" id="btn-signout" title="Sign out">Sign out</button>
+    <button class="btn btn-white" id="btn-add-recipe">+ Add Recipe</button>
+  </div>
+</header>
+
+<main>
+  <div id="empty-state" style="display:none;">
+    <div style="font-size:3rem;">🍳</div>
+    <p>No recipes yet. Add one to get started!</p>
+  </div>
+  <div id="recipe-grid"></div>
+</main>
+
+<!-- ── View Modal ── -->
+<div id="view-modal" class="modal-backdrop">
+  <div class="modal">
+    <div class="modal-header">
+      <div style="display:flex;align-items:center;gap:0.6rem;min-width:0;">
+        <button id="view-back-btn" class="btn btn-secondary" style="display:none;padding:0.3rem 0.7rem;font-size:0.82rem;">← Back</button>
+        <h2 id="view-modal-title" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">Recipe</h2>
+      </div>
+      <button class="modal-close" data-close-view>✕</button>
+    </div>
+    <div class="modal-body" id="view-body"></div>
+    <div class="modal-footer">
+      <button class="btn btn-danger" id="view-delete-btn">Delete</button>
+      <button class="btn btn-secondary" data-close-view>Close</button>
+      <button class="btn btn-primary" id="view-edit-btn">Edit</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── Form Modal (Add/Edit) ── -->
+<div id="form-modal" class="modal-backdrop">
+  <div class="modal">
+    <div class="modal-header">
+      <h2 id="form-title">Add Recipe</h2>
+      <button class="modal-close" data-close="form-modal">✕</button>
+    </div>
+    <div class="modal-body">
+      <form id="recipe-form" class="form-grid">
+        <div class="full">
+          <label for="f-title">Title *</label>
+          <input id="f-title" type="text" required placeholder="e.g. Grandma's Lasagna" />
+        </div>
+        <div class="full">
+          <label for="f-desc">Description</label>
+          <textarea id="f-desc" rows="2" placeholder="A brief description…"></textarea>
+        </div>
+        <div>
+          <label for="f-servings">Servings</label>
+          <input id="f-servings" type="number" min="1" placeholder="e.g. 4" />
+        </div>
+        <div>
+          <label for="f-tags">Tags</label>
+          <input id="f-tags" type="text" placeholder="dinner, italian, vegetarian" />
+          <p class="hint">Comma-separated</p>
+        </div>
+        <div>
+          <label for="f-prep">Prep Time</label>
+          <input id="f-prep" type="text" placeholder="e.g. 20 min" />
+        </div>
+        <div>
+          <label for="f-cook">Cook Time</label>
+          <input id="f-cook" type="text" placeholder="e.g. 45 min" />
+        </div>
+        <div class="full">
+          <label for="f-source-url">Source URL</label>
+          <input id="f-source-url" type="url" placeholder="https://www.example.com/recipe-name" />
+          <p class="hint">Optional link to the original recipe source.</p>
+        </div>
+        <div class="full">
+          <label for="f-ingredients">Ingredients</label>
+          <textarea id="f-ingredients" rows="5" placeholder="One ingredient per line:&#10;2 cups flour&#10;1 tsp salt&#10;@Hollandaise Sauce  ← link a sub-recipe&#10;…"></textarea>
+          <p class="hint">
+            Type <code style="background:#f0e8df;padding:0.1rem 0.3rem;border-radius:3px;">@Recipe Name</code> on its own line to link a sub-recipe. Or pick one:
+            <select id="f-subrecipe-picker" style="margin-left:0.4rem;padding:0.2rem 0.4rem;font-size:0.82rem;border-radius:4px;border:1px solid var(--border);background:#fff;cursor:pointer;">
+              <option value="">— insert sub-recipe link —</option>
+            </select>
+          </p>
+        </div>
+        <div class="full">
+          <label for="f-instructions">Instructions</label>
+          <textarea id="f-instructions" rows="6" placeholder="Step-by-step instructions…"></textarea>
+        </div>
+        <div class="full">
+          <label for="f-notes">Notes</label>
+          <textarea id="f-notes" rows="3" placeholder="Adjustments, substitutions, tips…"></textarea>
+        </div>
+      </form>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" data-close="form-modal">Cancel</button>
+      <button class="btn btn-primary" id="form-save-btn">Save Recipe</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── Import Modal ── -->
+<div id="import-modal" class="modal-backdrop">
+  <div class="modal" style="max-width:480px;">
+    <div class="modal-header">
+      <h2>Import Recipes</h2>
+      <button class="modal-close" data-close="import-modal">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="import-drop-area" id="drop-area">
+        <div style="font-size:2rem;">📂</div>
+        <p>Click to select a JSON file, or drag & drop it here.</p>
+      </div>
+      <input type="file" id="import-file" accept=".json,application/json" />
+
+      <div class="import-mode">
+        <label><input type="radio" name="import-mode" value="merge" checked /> Merge (add new, skip duplicates)</label>
+        <label><input type="radio" name="import-mode" value="replace" /> Replace all</label>
+      </div>
+
+      <div id="import-status" class="import-status"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" data-close="import-modal">Close</button>
+      <button class="btn btn-primary" id="import-btn" disabled>Import</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── Grocery List Modal ── -->
+<div id="grocery-modal" class="modal-backdrop">
+  <div class="modal" style="max-width:520px;">
+    <div class="modal-header">
+      <h2>Grocery List</h2>
+      <button class="modal-close" data-close="grocery-modal">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="grocery-tabs">
+        <button class="grocery-tab-btn active" data-grocery-tab="list">List</button>
+        <button class="grocery-tab-btn" data-grocery-tab="qr">QR Code for iPhone</button>
+      </div>
+      <div id="grocery-tab-list">
+        <div id="grocery-list-body"></div>
+      </div>
+      <div id="grocery-tab-qr" style="display:none;">
+        <div class="qr-container" id="qr-container">
+          <canvas id="qr-canvas"></canvas>
+          <p class="qr-hint">Scan with your iPhone camera to view your grocery list.</p>
+        </div>
+        <div id="qr-empty" class="grocery-empty" style="display:none;">Add items to your list first.</div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-danger" id="grocery-clear-btn">Clear All</button>
+      <button class="btn btn-secondary" data-close="grocery-modal">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── Toast ── -->
+<div id="toast"></div>
+</div>
+
+<script type="module" src="/src/main.ts"></script>
+</body>
+</html>
